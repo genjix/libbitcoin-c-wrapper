@@ -13,6 +13,12 @@ bc_error_code_t* create_error_code(int value);
 void bc_destroy_error_code(bc_error_code_t* self);
 const char* bc_error_code_message(bc_error_code_t* self);
 
+#define BC_HASH_DIGEST_LENGTH 32
+typedef uint8_t bc_hash_digest_t;
+bc_hash_digest_t* bc_create_hash_digest();
+void bc_destroy_hash_digest(bc_hash_digest_t* self);
+char* bc_hash_digest_encode_hex(bc_hash_digest_t* self);
+
 typedef struct bc_future_t bc_future_t;
 bc_future_t* bc_create_future();
 void bc_destroy_future(bc_future_t* self);
@@ -20,7 +26,7 @@ void bc_future_signal(bc_future_t* self);
 int bc_future_wait(bc_future_t* self);
 
 typedef struct bc_threadpool_t bc_threadpool_t;
-bc_threadpool_t* bc_create_threadpool();
+bc_threadpool_t* bc_create_threadpool(size_t number_threads);
 void bc_destroy_threadpool(bc_threadpool_t* self);
 void bc_threadpool_spawn(bc_threadpool_t* self);
 void bc_threadpool_stop(bc_threadpool_t* self);
@@ -36,6 +42,15 @@ typedef struct {
 bc_transaction_t* bc_create_transaction();
 void bc_destroy_transaction(bc_transaction_t* self);
 
+typedef struct {
+    // Used internally.
+    void* data;
+} bc_block_t;
+bc_block_t* bc_create_block();
+void bc_destroy_block(bc_block_t* self);
+bc_block_t* bc_genesis_block();
+bc_hash_digest_t* bc_hash_block_header(bc_block_t* block);
+
 typedef struct bc_blockchain_t bc_blockchain_t;
 typedef void (*bc_leveldb_blockchain_start_handler_t)(
     bc_error_code_t*, void* user_data);
@@ -45,6 +60,12 @@ void bc_leveldb_blockchain_start(bc_blockchain_t* self,
     const char* prefix,
     bc_leveldb_blockchain_start_handler_t handle_start, void* user_data);
 void bc_leveldb_blockchain_stop(bc_blockchain_t* self);
+
+typedef void (*bc_blockchain_import_handler_t)(
+    bc_error_code_t*, void* user_data);
+void bc_blockchain_import(bc_blockchain_t* self,
+    bc_block_t* import_block, size_t depth,
+    bc_blockchain_import_handler_t handle_import, void* user_data);
 
 typedef struct bc_hosts_t bc_hosts_t;
 bc_hosts_t* bc_create_hosts(bc_threadpool_t* pool);

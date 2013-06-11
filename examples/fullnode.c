@@ -41,14 +41,9 @@ fullnode_t* create_fullnode()
     // Threadpools and the number of threads they spawn.
     // 6 threads spawned in total.
     fullnode_t* fullnode = malloc(sizeof(fullnode_t));
-    fullnode->net_pool = bc_create_threadpool();
-    fullnode->disk_pool = bc_create_threadpool();
-    fullnode->mem_pool = bc_create_threadpool();
-    bc_threadpool_spawn(fullnode->net_pool);
-    int i;
-    for (i = 0; i < 4; ++i)
-        bc_threadpool_spawn(fullnode->disk_pool);
-    bc_threadpool_spawn(fullnode->mem_pool);
+    fullnode->net_pool = bc_create_threadpool(1);
+    fullnode->disk_pool = bc_create_threadpool(4);
+    fullnode->mem_pool = bc_create_threadpool(1);
     // Networking related services.
     fullnode->hosts = bc_create_hosts(fullnode->net_pool);
     fullnode->handshake = bc_create_handshake(fullnode->net_pool);

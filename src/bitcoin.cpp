@@ -1,4 +1,4 @@
-#include <bitcoin.h>
+#include <bitcoin/bitcoin.h>
 #include <bitcoin/bitcoin.hpp>
 #include <future>
 
@@ -19,6 +19,26 @@ const char* bc_error_code_message(bc_error_code_t* self)
 {
     self->errmsg = self->ec.message();
     return self->errmsg.c_str();
+}
+
+bc_hash_digest_t* bc_create_hash_digest()
+{
+    return new bc_hash_digest_t[BC_HASH_DIGEST_LENGTH];
+}
+void bc_destroy_hash_digest(bc_hash_digest_t* self)
+{
+    delete [] self;
+}
+char* bc_hash_digest_encode_hex(bc_hash_digest_t* self)
+{
+    BITCOIN_ASSERT(sizeof(char) == 1);
+    char* result = (char*)malloc(BC_HASH_DIGEST_LENGTH * 2 + 1);
+    bc::hash_digest tmp_hash;
+    std::copy(self, self + BC_HASH_DIGEST_LENGTH, tmp_hash.begin());
+    std::string repr = bc::encode_hex(tmp_hash);
+    std::copy(repr.begin(), repr.end(), result);
+    result[BC_HASH_DIGEST_LENGTH * 2] = '\0';
+    return result;
 }
 
 struct bc_future_t
@@ -45,11 +65,13 @@ int bc_future_wait(bc_future_t* self)
 
 struct bc_threadpool_t
 {
+    bc_threadpool_t(size_t number_threads)
+      : pool(number_threads) {}
     bc::threadpool pool;
 };
-bc_threadpool_t* bc_create_threadpool()
+bc_threadpool_t* bc_create_threadpool(size_t number_threads)
 {
-    return new bc_threadpool_t;
+    return new bc_threadpool_t(number_threads);
 }
 void bc_destroy_threadpool(bc_threadpool_t* self)
 {
@@ -74,11 +96,42 @@ void bc_threadpool_join(bc_threadpool_t* self)
 
 bc_transaction_t* bc_create_transaction()
 {
-    return new bc_transaction_t;
+    bc_transaction_t* self = new bc_transaction_t;
+    self->data = new bc::transaction_type;
+    return self;
 }
 void bc_destroy_transaction(bc_transaction_t* self)
 {
+    delete reinterpret_cast<bc::transaction_type*>(self->data);
     delete self;
+}
+
+bc_block_t* bc_create_block()
+{
+    bc_block_t* self = new bc_block_t;
+    self->data = new bc::block_type;
+    return self;
+}
+void bc_destroy_block(bc_block_t* self)
+{
+    delete reinterpret_cast<bc::block_type*>(self->data);
+    delete self;
+}
+bc_block_t* bc_genesis_block()
+{
+    bc_block_t* self = new bc_block_t;
+    self->data = new bc::block_type;
+    *reinterpret_cast<bc::block_type*>(self->data) =
+        bc::genesis_block();
+    return self;
+}
+bc_hash_digest_t* bc_hash_block_header(bc_block_t* block)
+{
+    bc_hash_digest_t* result = bc_create_hash_digest();
+    bc::hash_digest block_hash = bc::hash_block_header(
+        *reinterpret_cast<bc::block_type*>(block->data));
+    std::copy(block_hash.begin(), block_hash.end(), result);
+    return result;
 }
 
 struct bc_blockchain_t
@@ -109,12 +162,30 @@ void bc_leveldb_blockchain_start(bc_blockchain_t* self,
             handle_start(lec, user_data);
         };
     reinterpret_cast<bc::leveldb_blockchain*>(self->chain)->
-        start("database", blockchain_started);
+        start(prefix, blockchain_started);
 }
 void bc_leveldb_blockchain_stop(bc_blockchain_t* self)
 {
     reinterpret_cast<bc::leveldb_blockchain*>(self->chain)->
         stop();
+}
+
+void bc_blockchain_import(bc_blockchain_t* self,
+    bc_block_t* import_block, size_t depth,
+    bc_blockchain_import_handler_t handle_import, void* user_data)
+{
+    auto import_finished =
+        [handle_import, user_data](const std::error_code& ec)
+        {
+            bc_error_code_t* lec = 0;
+            if (ec)
+                lec = new bc_error_code_t{ec};
+            handle_import(lec, user_data);
+        };
+    reinterpret_cast<bc::blockchain*>(self->chain)->
+        import(
+            *reinterpret_cast<bc::block_type*>(import_block->data),
+            depth, import_finished);
 }
 
 struct bc_hosts_t
