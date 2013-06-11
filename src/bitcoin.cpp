@@ -211,9 +211,13 @@ void bc_protocol_subscribe_channel(bc_protocol_t* self,
     bc_protocol_channel_handler_t handle_channel, void* user_data)
 {
     auto new_channel =
-        [handle_channel, user_data](bc::channel_ptr channel)
+        [handle_channel, user_data](
+            const std::error_code& ec, bc::channel_ptr channel)
         {
-            handle_channel(new bc_channel_t{channel}, user_data);
+            bc_error_code_t* lec = 0;
+            if (ec)
+                lec = new bc_error_code_t{ec};
+            handle_channel(lec, new bc_channel_t{channel}, user_data);
         };
     self->protocol->subscribe_channel(new_channel);
 }

@@ -66,7 +66,8 @@ bc_network_t* bc_create_network(bc_threadpool_t* pool);
 void bc_destroy_network(bc_network_t* self);
 
 typedef struct bc_protocol_t bc_protocol_t;
-typedef void (*bc_protocol_channel_handler_t)(bc_channel_t*, void* user_data);
+typedef void (*bc_protocol_channel_handler_t)(
+    bc_error_code_t*, bc_channel_t*, void* user_data);
 bc_protocol_t* bc_create_protocol(bc_threadpool_t* pool,
     bc_hosts_t* hosts, bc_handshake_t* handshake, bc_network_t* network);
 void bc_destroy_protocol(bc_protocol_t* self);

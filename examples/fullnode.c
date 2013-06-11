@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <bitcoin.h>
+#include <bitcoin/bitcoin.h>
 
 typedef struct {
     // Threadpools
@@ -26,7 +26,8 @@ void fullnode_stop(fullnode_t* fullnode);
 
 // New connection has been started.
 // Subscribe to new transaction messages from the network.
-void fullnode_connection_started(bc_channel_t* node, void* user_data);
+void fullnode_connection_started(
+    bc_error_code_t* ec, bc_channel_t* node, void* user_data);
 // New transaction message from the network.
 // Attempt to validate it by storing it in the transaction pool.
 void fullnode_recv_tx(bc_error_code_t* ec, bc_transaction_t* tx,
@@ -145,8 +146,16 @@ void fullnode_stop(fullnode_t* fullnode)
     bc_leveldb_blockchain_stop(fullnode->chain);
 }
 
-void fullnode_connection_started(bc_channel_t* node, void* user_data)
+void fullnode_connection_started(
+    bc_error_code_t* ec, bc_channel_t* node, void* user_data)
 {
+    if (ec)
+    {
+        fprintf(stderr, "Receive transaction: %s\n",
+            bc_error_code_message(ec));
+        bc_destroy_error_code(ec);
+        return;
+    }
     fullnode_t* fullnode = user_data;
     void* tx_user_data = malloc(sizeof(node) + sizeof(fullnode));
     memcpy(tx_user_data, &node, sizeof(node));
