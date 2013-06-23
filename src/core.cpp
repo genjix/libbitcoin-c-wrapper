@@ -38,6 +38,23 @@ char* bc_hash_digest_encode_hex(bc_hash_digest_t* self)
     return result;
 }
 
+bc_data_chunk_t* bc_create_data_chunk()
+{
+    return new bc_data_chunk_t;
+}
+void bc_destroy_data_chunk(bc_data_chunk_t* self)
+{
+    delete self;
+}
+uint8_t* bc_data_chunk_data(bc_data_chunk_t* self)
+{
+    return self->data.data();
+}
+size_t bc_data_chunk_size(bc_data_chunk_t* self)
+{
+    return self->data.size();
+}
+
 struct bc_future_t
 {
     std::promise<bool> promise;

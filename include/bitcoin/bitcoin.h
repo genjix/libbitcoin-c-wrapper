@@ -19,6 +19,12 @@ bc_hash_digest_t* bc_create_hash_digest();
 void bc_destroy_hash_digest(bc_hash_digest_t* self);
 char* bc_hash_digest_encode_hex(bc_hash_digest_t* self);
 
+typedef struct bc_data_chunk_t bc_data_chunk_t;
+bc_data_chunk_t* bc_create_data_chunk();
+void bc_destroy_data_chunk(bc_data_chunk_t* self);
+uint8_t* bc_data_chunk_data(bc_data_chunk_t* self);
+size_t bc_data_chunk_size(bc_data_chunk_t* self);
+
 typedef struct bc_future_t bc_future_t;
 bc_future_t* bc_create_future();
 void bc_destroy_future(bc_future_t* self);
@@ -32,6 +38,30 @@ void bc_threadpool_spawn(bc_threadpool_t* self);
 void bc_threadpool_stop(bc_threadpool_t* self);
 void bc_threadpool_shutdown(bc_threadpool_t* self);
 void bc_threadpool_join(bc_threadpool_t* self);
+
+typedef struct bc_deterministic_wallet_t bc_deterministic_wallet_t;
+bc_deterministic_wallet_t* bc_create_deterministic_wallet();
+void bc_destroy_deterministic_wallet(bc_deterministic_wallet_t* self);
+void bc_deterministic_wallet_new_seed(bc_deterministic_wallet_t* self);
+// 0 on failure, 1 on success.
+int bc_deterministic_wallet_set_seed(bc_deterministic_wallet_t* self,
+    const char* seed);
+const char* bc_deterministic_wallet_seed(bc_deterministic_wallet_t* self);
+// 0 on failure, 1 on success.
+int bc_deterministic_wallet_set_master_public_key(
+    bc_deterministic_wallet_t* self, const bc_data_chunk_t* mpk);
+bc_data_chunk_t* bc_deterministic_wallet_master_public_key(
+    bc_deterministic_wallet_t* self);
+bc_data_chunk_t* bc_deterministic_wallet_generate_public_key(
+    bc_deterministic_wallet_t* self, size_t n, int for_change);
+
+typedef struct bc_payment_address_t bc_payment_address_t;
+bc_payment_address_t* bc_create_payment_address();
+void bc_destroy_payment_address(bc_payment_address_t* self);
+// 0 on failure, 1 on success.
+int bc_payment_address_set_public_key(bc_payment_address_t* self,
+    bc_data_chunk_t* pubkey_data);
+const char* bc_payment_address_encoded(bc_payment_address_t* self);
 
 typedef struct {
     uint32_t version;

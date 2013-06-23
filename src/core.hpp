@@ -14,5 +14,10 @@ struct bc_threadpool_t
     bc::threadpool pool;
 };
 
+struct bc_data_chunk_t
+{
+    bc::data_chunk data;
+};
+
 #endif
 
