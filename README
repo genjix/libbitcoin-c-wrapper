@@ -1,0 +1,10 @@
+The C API closely matches the C++ API with few minor changes.
+
+For usage, see the provided examples.
+
+C handlers take a void* user_data argument. Custom data can be passed by
+the user into the completion handler.
+
+All objects have create_foo() and destroy_foo(foo*) methods. This corresponds
+to constructors and destructors.
+
